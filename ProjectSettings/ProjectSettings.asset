@@ -319,7 +319,8 @@ PlayerSettings:
   psp2InfoBarColor: 0
   psmSplashimage: {fileID: 0}
   spritePackerPolicy: 
-  scriptingDefineSymbols: {}
+  scriptingDefineSymbols:
+    1: EX_GIZMO_ON
   metroPackageName: MathLabraryExtendForUnity
   metroPackageLogo: 
   metroPackageLogo140: 
