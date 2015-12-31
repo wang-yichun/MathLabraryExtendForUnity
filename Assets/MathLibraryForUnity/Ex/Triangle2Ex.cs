@@ -17,6 +17,11 @@ namespace Dest.Math.Ex
 
 		#region 构造函数
 
+		public Triangle2Ex (Triangle2 triangle)
+		{
+			baseTriangle = triangle;
+		}
+
 		public Triangle2Ex (Vector2 v0, Vector2 v1, Vector2 v2)
 		{
 			baseTriangle = new Triangle2 (v0, v1, v2);

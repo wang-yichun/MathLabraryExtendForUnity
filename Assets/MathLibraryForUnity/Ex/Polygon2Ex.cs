@@ -57,6 +57,22 @@ namespace Dest.Math.Ex
 			return tri_list.ToArray ();
 		}
 
+		public int[] ToTrianglesVertice ()
+		{
+			return Triangulates.Points (this.Vertices.ToList ());
+		}
+
+		public Polygon2Ex ToBorderExtendingPolygon (float distance)
+		{
+			for (int i = 0; i < this.VertexCount; i++) {
+				Vector2 prev_v = (i - 1 + this.VertexCount) % this.VertexCount;
+				Vector2 this_v = i;
+				Vector2 next_v = i % this.VertexCount;
+
+//				Line2Ex
+			}
+		}
+
 		#region Debug
 
 		public Color GizmoColor;
@@ -87,7 +103,6 @@ namespace Dest.Math.Ex
 				GUIStyle gs = new GUIStyle ();
 				gs.normal.textColor = GizmoColor;
 				gs.hover.textColor = Color.white;
-
 
 				Handles.Label (s.P0 + (Vector2)GizmoOffset, sg_idx.ToString (), gs);
 				sg_idx++;
