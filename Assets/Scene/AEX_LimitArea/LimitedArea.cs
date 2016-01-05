@@ -78,12 +78,14 @@ namespace AEX
 
 		public void BuildBorderMesh (Polygon2Ex polygon)
 		{
-			Line2Ex line = new Line2Ex (Line2.CreateFromTwoPoints (polygon.Vertices [0], polygon.Vertices [1]));
-			Line2Ex p_line = line.ToParallel (.1f);
-			line.ShowGizmo ();
-			p_line.ShowGizmo ();
+//			Line2Ex line = new Line2Ex (Line2.CreateFromTwoPoints (polygon.Vertices [0], polygon.Vertices [1]));
+//			Line2Ex p_line = line.ToParallel (.1f);
+//			line.ShowGizmo ();
+//			p_line.ShowGizmo ();
 
-			polygon.ToBorderExtendingPolygon ();
+			Polygon2Ex border_extending_polygon = polygon.ToBorderExtendingPolygon (.2f);
+			border_extending_polygon.ShowGizmo ();
+
 		}
 	}
 

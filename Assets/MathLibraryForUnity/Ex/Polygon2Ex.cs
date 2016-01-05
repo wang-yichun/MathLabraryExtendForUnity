@@ -64,13 +64,28 @@ namespace Dest.Math.Ex
 
 		public Polygon2Ex ToBorderExtendingPolygon (float distance)
 		{
-			for (int i = 0; i < this.VertexCount; i++) {
-				Vector2 prev_v = (i - 1 + this.VertexCount) % this.VertexCount;
-				Vector2 this_v = i;
-				Vector2 next_v = i % this.VertexCount;
+			List<Vector2> polygon_vertices = new List<Vector2> ();
 
-//				Line2Ex
+			for (int i = 0; i < this.VertexCount; i++) {
+				Vector2 prev_v = this.Vertices [(i - 1 + this.VertexCount) % this.VertexCount];
+				Vector2 this_v = this.Vertices [i];
+				Vector2 next_v = this.Vertices [(i + 1) % this.VertexCount];
+
+				Line2Ex line0 = new Line2Ex (Line2.CreateFromTwoPoints (prev_v, this_v));
+				Line2Ex line1 = new Line2Ex (Line2.CreateFromTwoPoints (this_v, next_v));
+
+				Line2Ex p_line0 = line0.ToParallel (distance);
+				Line2Ex p_line1 = line1.ToParallel (distance);
+
+				Line2Line2Intr info;
+				if (Intersection.FindLine2Line2 (ref p_line0.baseLine, ref p_line1.baseLine, out info)) {
+					polygon_vertices.Add (info.Point);
+				} else {
+					polygon_vertices.Add (this_v);
+				}
 			}
+
+			return new Polygon2Ex (polygon_vertices.ToArray ());
 		}
 
 		#region Debug

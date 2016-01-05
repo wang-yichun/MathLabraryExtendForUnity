@@ -21,7 +21,10 @@ namespace Dest.Math.Ex
 		public Line2Ex (Line2 line)
 		{
 			baseLine = line;
+
+			#if EX_GIZMO_ON
 			InitGizmoParam ();
+			#endif
 		}
 
 		public Line2Ex (ref Vector2 center, ref Vector2 direction) : this (new Line2 (ref center, ref direction))
