@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -17,8 +18,27 @@ public class GizmoBelt : MonoBehaviour
 	public bool DoStandardization;
 	public float Radius;
 
+	private Vector3 pc;
+	private Vector3 p0;
+	private Vector3 p1;
+	private Vector3 v01;
+	private Vector3 v01n;
+	private Vector3 vnn;
+	private Vector3 pc_a;
+	private Vector3 pc_b;
+	private Vector3 p0_a;
+	private Vector3 p0_b;
+	private Vector3 p1_a;
+	private Vector3 p1_b;
+
+	private float perimeter;
+	private float step_length = .2f;
+	private float start_offset = 0f;
+	private float start_offset2;
+
 	private float AxisDistance;
 	private Vector3 CenterPosition;
+	private float HalfCircumference;
 	private float AxisesScaleRate = 2f;
 
 	private void SetupChildren ()
@@ -35,10 +55,29 @@ public class GizmoBelt : MonoBehaviour
 
 	private void RefreshParam ()
 	{
-		Vector3 p0 = Axises [0].transform.position;
-		Vector3 p1 = Axises [1].transform.position;
+		p0 = Axises [0].transform.position;
+		p1 = Axises [1].transform.position;
 		CenterPosition = Vector3.Lerp (p0, p1, .5f);
+		pc = CenterPosition;
+
+		v01 = p1 - p0;
+		v01n = v01.normalized;
+		vnn = Quaternion.Euler (0f, 0f, 90f) * v01n;
+		pc_a = pc + vnn;
+		pc_b = pc - vnn;
+		p0_a = p0 + vnn * Radius;
+		p0_b = p0 - vnn * Radius;
+		p1_a = p1 + vnn * Radius;
+		p1_b = p1 - vnn * Radius;
+
+		HalfCircumference = Mathf.PI * Radius;
+
 		AxisDistance = Vector3.Distance (p0, p1);
+
+		perimeter = 2 * AxisDistance + HalfCircumference;
+		step_length = .2f;
+
+		start_offset2 = start_offset % step_length;
 	}
 
 	private void Standardization ()
@@ -56,24 +95,18 @@ public class GizmoBelt : MonoBehaviour
 	private void DrawGizmos ()
 	{
 		#if UNITY_EDITOR
-		Vector3 pc = CenterPosition;
-		Vector3 p0 = Axises [0].transform.position;
-		Vector3 p1 = Axises [1].transform.position;
-		Vector3 v01 = p1 - p0;
-		Vector3 v01n = v01.normalized;
-		Vector3 vnn = Quaternion.Euler (0f, 0f, 90f) * v01n;
-		Vector3 pc_a = pc + vnn;
-		Vector3 pc_b = pc - vnn;
-		Vector3 p0_a = p0 + vnn;
-		Vector3 p0_b = p0 - vnn;
-		Vector3 p1_a = p1 + vnn;
-		Vector3 p1_b = p1 - vnn;
 
 		Handles.color = Color.cyan;
 		Handles.DrawLines (new Vector3 []{ p0, p1, pc_a, pc_b, p0_a, p0_b, p1_a, p1_b });
 		Handles.CircleCap (0, p0, Quaternion.identity, 1f * Radius);
 		Handles.CircleCap (0, p1, Quaternion.identity, 1f * Radius);
 
+		Handles.color = Color.yellow;
+		if (position_list != null) {
+			foreach (Vector3 p in position_list) {
+				Handles.CircleCap (0, p, Quaternion.identity, .01f);
+			}
+		}
 		#endif
 	}
 
@@ -83,8 +116,35 @@ public class GizmoBelt : MonoBehaviour
 		SetupChildren ();
 		RefreshParam ();
 
+
+		RefreshChain ();
 		DrawGizmos ();
 	}
 
+	List<Vector3> position_list;
 
+	public void RefreshChain ()
+	{
+		position_list = new List<Vector3> ();
+		for (float offset = start_offset2; offset < perimeter + start_offset2; offset += step_length) {
+			if (offset < AxisDistance) {
+				Vector3 direction = p1 - p0;
+				Vector3 dn = direction.normalized;
+				float distance = offset;
+				Vector3 p = p0_a + dn * distance;
+				position_list.Add (p);
+
+			} else if (offset < AxisDistance + HalfCircumference) {
+				
+			} else if (offset < AxisDistance * 2f + HalfCircumference) {
+				Vector3 direction = p0 - p1;
+				Vector3 dn = direction.normalized;
+				float distance = offset - AxisDistance - HalfCircumference;
+				Vector3 p = p1_b + dn * distance;
+				position_list.Add (p);
+			} else {
+				
+			}
+		}
+	}
 }
