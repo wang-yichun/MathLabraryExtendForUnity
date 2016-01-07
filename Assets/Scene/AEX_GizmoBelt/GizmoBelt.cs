@@ -33,6 +33,10 @@ public class GizmoBelt : MonoBehaviour
 
 	private float perimeter;
 	private float step_length = .2f;
+	private float step_offset;
+	private float step_offset_length;
+	private int step_mult;
+
 	private float start_offset = 0f;
 	private float start_offset2;
 
@@ -74,8 +78,11 @@ public class GizmoBelt : MonoBehaviour
 
 		AxisDistance = Vector3.Distance (p0, p1);
 
-		perimeter = 2 * AxisDistance + HalfCircumference;
-		step_length = .2f;
+		perimeter = 2f * AxisDistance + 2f * HalfCircumference;
+
+		step_mult = (int)(perimeter / step_length);
+		step_offset = perimeter - (float)step_mult * step_length;
+		step_offset_length = step_length + step_offset / (float)step_mult;
 
 		start_offset2 = start_offset % step_length;
 	}
@@ -126,7 +133,8 @@ public class GizmoBelt : MonoBehaviour
 	public void RefreshChain ()
 	{
 		position_list = new List<Vector3> ();
-		for (float offset = start_offset2; offset < perimeter + start_offset2; offset += step_length) {
+		for (float offset = start_offset2; offset < perimeter + start_offset2; offset += step_offset_length) {
+			
 			if (offset < AxisDistance) {
 				Vector3 direction = p1 - p0;
 				Vector3 dn = direction.normalized;
@@ -135,15 +143,28 @@ public class GizmoBelt : MonoBehaviour
 				position_list.Add (p);
 
 			} else if (offset < AxisDistance + HalfCircumference) {
-				
+				Vector3 va = p1_a - p1;
+				float distance = offset - AxisDistance;
+				float delta = 180f * distance / HalfCircumference;
+				Vector3 v_delta = Quaternion.Euler (0f, 0f, -delta) * va;
+				Vector3 p = p1 + v_delta;
+				position_list.Add (p);
+
 			} else if (offset < AxisDistance * 2f + HalfCircumference) {
 				Vector3 direction = p0 - p1;
 				Vector3 dn = direction.normalized;
 				float distance = offset - AxisDistance - HalfCircumference;
 				Vector3 p = p1_b + dn * distance;
 				position_list.Add (p);
+
 			} else {
-				
+				Vector3 vb = p0_b - p0;
+				float distance = offset - AxisDistance * 2f - HalfCircumference;
+				float delta = 180f * distance / HalfCircumference;
+				Vector3 v_delta = Quaternion.Euler (0f, 0f, -delta) * vb;
+				Vector3 p = p0 + v_delta;
+				position_list.Add (p);
+
 			}
 		}
 	}
