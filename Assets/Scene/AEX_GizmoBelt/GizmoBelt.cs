@@ -9,10 +9,10 @@ using UnityEditor;
 public class GizmoBelt : MonoBehaviour
 {
 	private const string AXIS_GROUP = "AxisGroup";
-	private const string CHAIN_GROUP = "ChainGroup";
+	private const string CHAIN = "Chain";
 
 	public Transform AxisGroup;
-	public Transform ChainGroup;
+	public GameObject Chain;
 	public Transform[] Axises;
 
 	public bool DoStandardization;
@@ -32,7 +32,7 @@ public class GizmoBelt : MonoBehaviour
 	private Vector3 p1_b;
 
 	private float perimeter;
-	private float step_length = .2f;
+	private float step_length = .3f;
 	private float step_offset;
 	private float step_offset_length;
 	private int step_mult;
@@ -48,7 +48,7 @@ public class GizmoBelt : MonoBehaviour
 	private void SetupChildren ()
 	{
 		AxisGroup = transform.FindChild (AXIS_GROUP);
-		ChainGroup = transform.FindChild (CHAIN_GROUP);
+		Chain = transform.FindChild (CHAIN).gameObject;
 
 		Axises = new Transform[AxisGroup.childCount];
 		for (int i = 0; i < AxisGroup.childCount; i++) {
@@ -110,8 +110,11 @@ public class GizmoBelt : MonoBehaviour
 
 		Handles.color = Color.yellow;
 		if (position_list != null) {
-			foreach (Vector3 p in position_list) {
+			for (int i = 0; i < position_list.Count; i++) {
+				Vector3 p = position_list [i];
+				Vector3 dir = direction_list [i];
 				Handles.CircleCap (0, p, Quaternion.identity, .01f);
+				Handles.ArrowCap (0, p, Quaternion.FromToRotation (-Vector3.back, dir), .1f);
 			}
 		}
 		#endif
@@ -124,15 +127,18 @@ public class GizmoBelt : MonoBehaviour
 		RefreshParam ();
 
 
-		RefreshChain ();
+		RefreshChainData ();
+		RenderChain ();
 		DrawGizmos ();
 	}
 
 	List<Vector3> position_list;
+	List<Vector3> direction_list;
 
-	public void RefreshChain ()
+	public void RefreshChainData ()
 	{
 		position_list = new List<Vector3> ();
+		direction_list = new List<Vector3> ();
 		for (float offset = start_offset2; offset < perimeter + start_offset2; offset += step_offset_length) {
 			
 			if (offset < AxisDistance) {
@@ -140,7 +146,9 @@ public class GizmoBelt : MonoBehaviour
 				Vector3 dn = direction.normalized;
 				float distance = offset;
 				Vector3 p = p0_a + dn * distance;
+				Vector3 va = p0_a - p0;
 				position_list.Add (p);
+				direction_list.Add (va.normalized);
 
 			} else if (offset < AxisDistance + HalfCircumference) {
 				Vector3 va = p1_a - p1;
@@ -149,13 +157,16 @@ public class GizmoBelt : MonoBehaviour
 				Vector3 v_delta = Quaternion.Euler (0f, 0f, -delta) * va;
 				Vector3 p = p1 + v_delta;
 				position_list.Add (p);
+				direction_list.Add (v_delta.normalized);
 
 			} else if (offset < AxisDistance * 2f + HalfCircumference) {
 				Vector3 direction = p0 - p1;
 				Vector3 dn = direction.normalized;
 				float distance = offset - AxisDistance - HalfCircumference;
 				Vector3 p = p1_b + dn * distance;
+				Vector3 vb = p1_b - p1;
 				position_list.Add (p);
+				direction_list.Add (vb.normalized);
 
 			} else {
 				Vector3 vb = p0_b - p0;
@@ -164,8 +175,68 @@ public class GizmoBelt : MonoBehaviour
 				Vector3 v_delta = Quaternion.Euler (0f, 0f, -delta) * vb;
 				Vector3 p = p0 + v_delta;
 				position_list.Add (p);
+				direction_list.Add (v_delta.normalized);
 
 			}
 		}
+	}
+
+	public float chain_unit_width = .32f;
+	public float chain_unit_height = .16f;
+
+	public void RenderChain ()
+	{
+		MeshFilter mf = Chain.GetComponent<MeshFilter> ();
+		Mesh mesh = mf.sharedMesh;
+
+
+		Vector3[] vertices = new Vector3[ position_list.Count * 4 ];
+		Vector2[] uv = new Vector2[ position_list.Count * 4 ];
+		int[] triangles = new int[ position_list.Count * 6 ];
+
+		for (int i = 0; i < position_list.Count; i++) {
+			Vector3 position = position_list [i];
+			Vector3 direction = direction_list [i];
+
+			Quaternion qua = Quaternion.FromToRotation (Vector3.up, direction);
+
+			Vector2 v1 = qua * new Vector2 (chain_unit_width / 2f, chain_unit_height / 2f);
+			Vector2 v2 = qua * new Vector2 (-chain_unit_width / 2f, chain_unit_height / 2f);
+			Vector2 v3 = qua * new Vector2 (-chain_unit_width / 2f, -chain_unit_height / 2f);
+			Vector2 v4 = qua * new Vector2 (chain_unit_width / 2f, -chain_unit_height / 2f);
+
+			Vector2 p1 = (Vector2)position + v1;
+			Vector2 p2 = (Vector2)position + v2;
+			Vector2 p3 = (Vector2)position + v3;
+			Vector2 p4 = (Vector2)position + v4;
+
+			int pidx1 = i * 4;
+			int pidx2 = pidx1 + 1;
+			int pidx3 = pidx1 + 2;
+			int pidx4 = pidx1 + 3;
+
+			vertices [pidx1] = p1;
+			vertices [pidx2] = p2;
+			vertices [pidx3] = p3;
+			vertices [pidx4] = p4;
+
+			uv [pidx1] = new Vector2 (1f, 1f);
+			uv [pidx2] = new Vector2 (0f, 1f);
+			uv [pidx3] = new Vector2 (0f, 0f);
+			uv [pidx4] = new Vector2 (1f, 0f);
+
+			triangles [i * 6] = pidx1;
+			triangles [i * 6 + 1] = pidx4;
+			triangles [i * 6 + 2] = pidx2;
+			triangles [i * 6 + 3] = pidx3;
+			triangles [i * 6 + 4] = pidx2;
+			triangles [i * 6 + 5] = pidx4;
+		}
+
+		mesh.Clear ();
+		mesh.vertices = vertices;
+		mesh.uv = uv;
+		mesh.triangles = triangles;
+
 	}
 }
