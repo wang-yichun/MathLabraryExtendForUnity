@@ -37,7 +37,7 @@ public class GizmoBelt : MonoBehaviour
 	private float step_offset_length;
 	private int step_mult;
 
-	private float start_offset = 0f;
+	private float start_offset = .2f;
 	private float start_offset2;
 
 	private float AxisDistance;
@@ -185,7 +185,7 @@ public class GizmoBelt : MonoBehaviour
 				position_list.Add (p);
 				direction_list.Add (vb.normalized);
 
-			} else {
+			} else if (offset < perimeter) {
 				Vector3 vb = p0_b - p0;
 				float distance = offset - AxisDistance * 2f - HalfCircumference;
 				float delta = 180f * distance / HalfCircumference;
