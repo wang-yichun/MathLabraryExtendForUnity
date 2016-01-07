@@ -59,8 +59,8 @@ public class GizmoBelt : MonoBehaviour
 
 	private void RefreshParam ()
 	{
-		p0 = Axises [0].transform.position;
-		p1 = Axises [1].transform.position;
+		p0 = Axises [0].transform.localPosition;
+		p1 = Axises [1].transform.localPosition;
 		CenterPosition = Vector3.Lerp (p0, p1, .5f);
 		pc = CenterPosition;
 
@@ -83,25 +83,37 @@ public class GizmoBelt : MonoBehaviour
 		step_mult = (int)(perimeter / step_length);
 		step_offset = perimeter - (float)step_mult * step_length;
 		step_offset_length = step_length + step_offset / (float)step_mult;
-
-		start_offset2 = start_offset % step_length;
 	}
 
 	private void Standardization ()
 	{
 		if (DoStandardization) {
 			DoStandardization = false;
+
+//			MeshFilter mf = Chain.GetComponent<MeshFilter> ();
+//			if (mf.sharedMesh != null) {
+//				mf.sharedMesh = new Mesh ();
+//			}
+
 			AxisGroup.DetachChildren ();
-			transform.position = CenterPosition;
+//			Chain.transform.SetParent (null);
+
+			transform.position = transform.localToWorldMatrix.MultiplyPoint (CenterPosition);
+
 			foreach (Transform axis in Axises) {
 				axis.SetParent (AxisGroup);
 			}
+
+//			Chain.transform.SetParent (transform);
 		}
 	}
 
 	private void DrawGizmos ()
 	{
 		#if UNITY_EDITOR
+
+		Matrix4x4 trs = Matrix4x4.TRS (transform.position, Quaternion.identity, Vector3.one);
+		Handles.matrix *= trs;
 
 		Handles.color = Color.cyan;
 		Handles.DrawLines (new Vector3 []{ p0, p1, pc_a, pc_b, p0_a, p0_b, p1_a, p1_b });
@@ -117,6 +129,8 @@ public class GizmoBelt : MonoBehaviour
 				Handles.ArrowCap (0, p, Quaternion.FromToRotation (-Vector3.back, dir), .1f);
 			}
 		}
+
+		Handles.matrix *= trs.inverse;
 		#endif
 	}
 
@@ -125,8 +139,7 @@ public class GizmoBelt : MonoBehaviour
 		Standardization ();
 		SetupChildren ();
 		RefreshParam ();
-
-
+	
 		RefreshChainData ();
 		RenderChain ();
 		DrawGizmos ();
@@ -137,8 +150,12 @@ public class GizmoBelt : MonoBehaviour
 
 	public void RefreshChainData ()
 	{
+
+		start_offset2 = start_offset % step_length;
+
 		position_list = new List<Vector3> ();
 		direction_list = new List<Vector3> ();
+
 		for (float offset = start_offset2; offset < perimeter + start_offset2; offset += step_offset_length) {
 			
 			if (offset < AxisDistance) {
@@ -188,7 +205,9 @@ public class GizmoBelt : MonoBehaviour
 	{
 		MeshFilter mf = Chain.GetComponent<MeshFilter> ();
 		Mesh mesh = mf.sharedMesh;
-
+		if (mesh == null) {
+			mesh = new Mesh ();
+		}
 
 		Vector3[] vertices = new Vector3[ position_list.Count * 4 ];
 		Vector2[] uv = new Vector2[ position_list.Count * 4 ];
@@ -237,6 +256,34 @@ public class GizmoBelt : MonoBehaviour
 		mesh.vertices = vertices;
 		mesh.uv = uv;
 		mesh.triangles = triangles;
+		mesh.Optimize ();
+		mesh.name = "chain_unit";
 
+		mf.sharedMesh = mesh;
+	}
+
+	public float Speed;
+
+	void Start ()
+	{
+		Standardization ();
+		SetupChildren ();
+		RefreshParam ();
+
+		RefreshChainData ();
+		RenderChain ();
+	}
+
+	private float AngularSpeedRate = 120f;
+
+	void Update ()
+	{
+		start_offset += Speed * Time.deltaTime;
+		for (int i = 0; i < 2; i++) {
+			Axises [i].FindChild ("roll").Rotate (0f, 0f, -Speed * Time.deltaTime * AngularSpeedRate);
+		}
+
+		RefreshChainData ();
+		RenderChain ();
 	}
 }
