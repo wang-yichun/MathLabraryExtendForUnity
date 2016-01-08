@@ -21,6 +21,7 @@ namespace pogorock
 
 		public bool DoDrawGizmos;
 		public bool DoStandardization;
+		public bool DoClone;
 		public bool DoTrySerialize;
 		public string DoTryApply = "";
 
@@ -197,6 +198,8 @@ namespace pogorock
 			DrawGizmos ();
 
 			TrySerialize ();
+
+			CloneOne ();
 		}
 
 		List<Vector3> position_list;
@@ -343,11 +346,28 @@ namespace pogorock
 		{
 			start_offset += Speed * Time.deltaTime;
 			for (int i = 0; i < 2; i++) {
-				Axises [i].FindChild ("roll").Rotate (0f, 0f, -Speed * Time.deltaTime * AngularSpeedRate);
+				Axises [i].FindChild ("roll").Rotate (0f, 0f, -Speed * Time.deltaTime * AngularSpeedRate / Radius * .5f);
 			}
 
 			RefreshChainData ();
 			RenderChain ();
+		}
+
+		private void CloneOne ()
+		{
+			#if UNITY_EDITOR
+			if (DoClone) {
+				DoClone = false;
+
+				GameObject prefab = Resources.Load<GameObject> ("GizmoBelt_Clone");
+				GameObject cloned_go = Instantiate (prefab);
+				cloned_go.name = this.name;
+				cloned_go.transform.SetParent (this.transform.parent);
+
+				GizmoBelt gb = cloned_go.GetComponent<GizmoBelt> ();
+				gb.Apply (this.DoSerialize ());
+			}
+			#endif
 		}
 
 		#region ICustomSerializable implementation
@@ -395,16 +415,17 @@ namespace pogorock
 			Json = data;
 			Hashtable ht = JsonConvert.DeserializeObject<Hashtable> (Json);
 
-			this.transform.localPosition.ParseSerialize (Convert.ToString (ht ["Pos"]));
+			this.transform.localPosition = Vector3_Extend.ParseSerialize (Convert.ToString (ht ["Pos"]));
 			this.Radius = (float)Convert.ToDouble (ht ["Radius"]);
 			this.Speed = (float)Convert.ToDouble (ht ["Speed"]);
 
 			var axises = JsonConvert.DeserializeObject<string[]> (ht ["Axises"].ToString ());
 
 			for (int i = 0; i < 2; i++) {
-				Axises [i].localPosition.ParseSerialize (axises [i]);
+				Axises [i].localPosition = Vector3_Extend.ParseSerialize (axises [i]);
 			}
 
+			this.RefreshParam ();
 			this.DoStandardization = true;
 		}
 

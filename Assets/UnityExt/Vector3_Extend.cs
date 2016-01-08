@@ -11,21 +11,21 @@ namespace pogorock
 			return string.Format ("({0},{1},{2})", v.x, v.y, v.z);
 		}
 
-		public static bool ParseSerialize (this Vector3 v, string data)
+		public static Vector3 ParseSerialize (string data)
 		{
+			Vector3 v = Vector3.zero;
 			try {
 				string[] splited = data.Replace ("(", "").Replace (")", "").Split (new char[]{ ',' });
 
 				v = new Vector3 (
-					             (float)Convert.ToDouble (splited [0]),
-					             (float)Convert.ToDouble (splited [1]),
-					             (float)Convert.ToDouble (splited [2])
-				             );
+					(float)Convert.ToDouble (splited [0]),
+					(float)Convert.ToDouble (splited [1]),
+					(float)Convert.ToDouble (splited [2])
+				);
 			} catch (Exception ex) {
 				Debug.LogFormat ("Vector3_Extend.ParseSerialize: {0}", ex);
-				return false;
 			}
-			return true;
+			return v;
 		}
 	}
 }
