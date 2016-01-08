@@ -58,8 +58,8 @@ namespace Dest.Math.Tests
 				particles[i] = new ParticleSystem.Particle()
 				{
 					position = points[i],
-					color = Color.blue,
-					size = ParticleSize
+					startColor = Color.blue,
+					startSize = ParticleSize
 				};
 			}
 			Particles.SetParticles(particles, particles.Length);
